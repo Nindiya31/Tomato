@@ -7,44 +7,41 @@ import { toast } from 'react-toastify'
 
 const LoginPopup = ({ setShowLogin }) => {
 
-
-
-    const { setToken, url,loadCartData } = useContext(StoreContext)
+    const { setToken, url, loadCartData } = useContext(StoreContext)
     const [currState, setCurrState] = useState("Sign Up");
-
     const [data, setData] = useState({
         name: "",
         email: "",
         password: ""
     })
+    const [loading, setLoading] = useState(false);
 
     const onChangeHandler = (event) => {
-        const name = event.target.name
-        const value = event.target.value
-        setData(data => ({ ...data, [name]: value }))
+        const { name, value } = event.target;
+        setData(prevData => ({ ...prevData, [name]: value }));
     }
 
     const onLogin = async (e) => {
-        e.preventDefault()
+        e.preventDefault();
+        setLoading(true);
 
-        let new_url = url;
-         if (currState === "Login") {
-            new_url += "/api/user/login";
-        }
-        else {
-            new_url += "/api/user/register";
-        }
-        const response = await axios.post(new_url, data);
-        if (response.data.success) {
-            setToken(response.data.token)
-            localStorage.setItem("token", response.data.token)
-            loadCartData({token:response.data.token})
-            setShowLogin(false)
-        }
-        else {
-          toast.error(response.data.message)
-            toast.error(response.data.message)
-            // alert(response.data.message)
+        let endpoint = currState === "Login" ? "/api/user/login" : "/api/user/register";
+        let new_url = `${url}${endpoint}`;
+
+        try {
+            const response = await axios.post(new_url, data);
+            if (response.data.success) {
+                setToken(response.data.token);
+                localStorage.setItem("token", response.data.token);
+                loadCartData({ token: response.data.token });
+                setShowLogin(false);
+            } else {
+                toast.error(response.data.message);
+            }
+        } catch (error) {
+            toast.error("An error occurred. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -52,17 +49,46 @@ const LoginPopup = ({ setShowLogin }) => {
         <div className='login-popup'>
             <form onSubmit={onLogin} className="login-popup-container">
                 <div className="login-popup-title">
-                    <h2>{currState}</h2> <img onClick={() => setShowLogin(false)} src={assets.cross_icon} alt="" />
+                    <h2>{currState}</h2> 
+                    <img onClick={() => setShowLogin(false)} src={assets.cross_icon} alt="Close" />
                 </div>
                 <div className="login-popup-inputs">
-                    {currState === "Sign Up" ? <input name='name' onChange={onChangeHandler} value={data.name} type="text" placeholder='Your name' required /> : <></>}
-                    <input name='email' onChange={onChangeHandler} value={data.email} type="email" placeholder='Your email' />
-                    <input name='password' onChange={onChangeHandler} value={data.password} type="password" placeholder='Password' required />
+                    {currState === "Sign Up" && (
+                        <input 
+                            name='name' 
+                            onChange={onChangeHandler} 
+                            value={data.name} 
+                            type="text" 
+                            placeholder='Your name' 
+                            required 
+                            aria-label="Your name"
+                        />
+                    )}
+                    <input 
+                        name='email' 
+                        onChange={onChangeHandler} 
+                        value={data.email} 
+                        type="email" 
+                        placeholder='Your email' 
+                        required 
+                        aria-label="Your email"
+                    />
+                    <input 
+                        name='password' 
+                        onChange={onChangeHandler} 
+                        value={data.password} 
+                        type="password" 
+                        placeholder='Password' 
+                        required 
+                        aria-label="Password"
+                    />
                 </div>
-                <button type='submit'>{currState === "Login" ? "Login" : "Create account"}</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? "Processing..." : (currState === "Login" ? "Login" : "Create account")}
+                </button>
                 <div className="login-popup-condition">
-                    <input type="checkbox" name="" id="" required/>
-                    <p>By continuing, i agree to the terms of use & privacy policy.</p>
+                    <input type="checkbox" id="terms" required />
+                    <label htmlFor="terms">By continuing, I agree to the terms of use & privacy policy.</label>
                 </div>
                 {currState === "Login"
                     ? <p>Create a new account? <span onClick={() => setCurrState('Sign Up')}>Click here</span></p>

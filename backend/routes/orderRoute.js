@@ -1,20 +1,13 @@
 import express from 'express';
-import orderModel from '../models/orderModel.js';
+import authMiddleware from '../middleware/auth.js';
+import { listOrders, placeOrder,updateStatus,userOrders, verifyOrder } from '../controllers/orderController.js';
 
-const router = express.Router();
+const orderRouter = express.Router();
 
-router.get('/order/:id', async (req, res) => {
-    try {
-        const order = await orderModel.findById(req.params.id);
-        if (order) {
-            res.json({ success: true, data: order });
-        } else {
-            res.json({ success: false, message: "Order not found" });
-        }
-    } catch (error) {
-        console.log(error);
-        res.json({ success: false, message: "Error fetching order" });
-    }
-});
+orderRouter.get("/list",listOrders);
+orderRouter.post("/userorders",authMiddleware,userOrders);
+orderRouter.post("/place",authMiddleware,placeOrder);
+orderRouter.post("/status",updateStatus);
+orderRouter.post("/verify",verifyOrder);
 
-export default router;
+export default orderRouter;
